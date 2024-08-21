@@ -18,7 +18,8 @@ const fileStorage = multer.diskStorage({
 		cb(null, "images")
 	},
 	filename: (req, file, cb) => {
-		cb(null, new Date().toISOString() + "-" + file.originalname)
+		//cb(null, new Date().toISOString() + "-" + file.originalname) //only for MAC
+		cb(null, new Date().getTime() + "-" + file.originalname) // WINDOWDS
 	},
 })
 
@@ -56,13 +57,22 @@ app.use((req, res, next) => {
 	next()
 })
 
+app.use(auth)
+
 app.put("/post-image", (req, res, next) => {
+	if (!req.isAuth) {
+		throw new Error("not authenticated!")
+	}
 	if (!req.file) {
 		return res.status(200).json({ message: "No file provided!" })
 	}
+	if (req.body.oldPath) {
+		clearImage(req.body.oldPath)
+	}
+	return res
+		.status(201)
+		.json({ message: "File stored", filePath: req.file.path })
 })
-
-app.use(auth)
 
 app.use(
 	"/graphql",
