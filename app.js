@@ -1,13 +1,14 @@
 const path = require("path");
+const fs = require("fs")
 
-const express = require("express");
-const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
-const multer = require("multer");
-const { graphqlHTTP } = require("express-graphql");
+const express = require("express")
+const bodyParser = require("body-parser")
+const mongoose = require("mongoose")
+const multer = require("multer")
+const { graphqlHTTP } = require("express-graphql")
 
-const graphqlSchema = require("./graphql/schema");
-const graphqlResolver = require("./graphql/resolvers");
+const graphqlSchema = require("./graphql/schema")
+const graphqlResolver = require("./graphql/resolvers")
 const auth = require("./middleware/is-auth")
 
 const app = express()
@@ -55,40 +56,51 @@ app.use((req, res, next) => {
 	next()
 })
 
+app.put("/post-image", (req, res, next) => {
+	if (!req.file) {
+		return res.status(200).json({ message: "No file provided!" })
+	}
+})
+
 app.use(auth)
 
 app.use(
-  "/graphql",
-  graphqlHTTP({
-    schema: graphqlSchema,
-    rootValue: graphqlResolver,
-    graphiql: true,
-    customFormatErrorFn(err) {
-      if (!err.originalError) {
-        return err;
-      }
-      const data = err.originalError.data;
-      const message = err.message || "An error ocurred.";
-      const code = err.originalError.code || 500;
-      return { message: message, status: code, data: data };
-    },
-  })
-);
+	"/graphql",
+	graphqlHTTP({
+		schema: graphqlSchema,
+		rootValue: graphqlResolver,
+		graphiql: true,
+		customFormatErrorFn(err) {
+			if (!err.originalError) {
+				return err
+			}
+			const data = err.originalError.data
+			const message = err.message || "An error ocurred."
+			const code = err.originalError.code || 500
+			return { message: message, status: code, data: data }
+		},
+	})
+)
 
 app.use((error, req, res, next) => {
-  console.log(error);
-  const status = error.statusCode || 500;
-  const message = error.message;
-  const data = error.data;
-  res.status(status).json({ message: message, data: data });
-});
+	console.log(error)
+	const status = error.statusCode || 500
+	const message = error.message
+	const data = error.data
+	res.status(status).json({ message: message, data: data })
+})
 
 mongoose
-  .connect("mongodb://localhost:27017/", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then((result) => {
-    app.listen(8080);
-  })
-  .catch((err) => console.log(err));
+	.connect("mongodb://localhost:27017/", {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+	})
+	.then((result) => {
+		app.listen(8080)
+	})
+	.catch((err) => console.log(err))
+
+const clearImage = (filePath) => {
+	filePath = path.join(__dirname, "..", filePath)
+	fs.unlink(filePath, (err) => console.log(err))
+}
